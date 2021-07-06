@@ -6,26 +6,30 @@ import seaborn as sns
 matplotlib.use("Qt5Agg")
 
 
-def predict(X, w):
-    return X * w
+def predict(X, w, b):
+    return X * w + b
 
 
-def loss(X, Y, w):
-    return np.average((predict(X, w) - Y)**2)
+def loss(X, Y, w, b):
+    return np.average((predict(X, w, b) - Y)**2)
 
 
 def train(X, Y, iterations, learning_rate):
-    w = 0
+    w = b = 0
     for i in range(iterations):
-        current_loss = loss(X, Y, w)
+        current_loss = loss(X, Y, w, b)
         print("Iteration %4d => Loss: %.6f" % (i, current_loss))
 
-        if loss(X, Y, w + learning_rate) < current_loss:
+        if loss(X, Y, w + learning_rate, b) < current_loss:
             w += learning_rate
-        elif loss(X, Y, w - learning_rate) < current_loss:
+        elif loss(X, Y, w - learning_rate, b) < current_loss:
             w -= learning_rate
+        elif loss(X, Y, w, b + learning_rate) < current_loss:
+            b += learning_rate
+        elif loss(X, Y, w, b - learning_rate) < current_loss:
+            b -= learning_rate
         else:
-            return w
+            return w, b
 
     raise Exception("Couldn't converge within %d iterations" % iterations)
 
@@ -33,14 +37,15 @@ def train(X, Y, iterations, learning_rate):
 if __name__ == "__main__":
     X, Y = np.loadtxt("pizza.txt", skiprows=1, unpack=True)
 
-    w = train(X, Y, 1000, 0.01)
-    print("w=%.3f" % w)
+    w, b = train(X, Y, 10000, 0.01)
+    print("w=%.3f, b=%.3f" % (w, b))
 
     YPREDICT = []
     for x, y in zip(X, Y):
-        YPREDICT.append(predict(x, w))
+        prediction = predict(x, w, b)
+        YPREDICT.append(prediction)
         print("Reservations: %4d, Pizzas: %4d, Predicted Pizzas: %4d" %
-              (x, y, predict(x, w)))
+              (x, y, prediction))
 
     sns.set()
     plot.axis([0, 50, 0, 50])
